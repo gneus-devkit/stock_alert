@@ -1,8 +1,8 @@
 # ==============================================================================
-# GNeUs SYSTEM WORKFLOW AUTOMATION ENGINE - COMPOSABLE TICKER INTERFACE
-# AUTHOR: Gregory (Senior Systems Architect)
-# SYSTEM: GNEUS-BLK-OS | Win11 Ent | i5-1035G1 | 12GB RAM MAX
-# ENV: D:\Documents\GNeUs_DEV\.venv
+# SYSTEM WORKFLOW AUTOMATION ENGINE - COMPOSABLE TICKER INTERFACE
+# AUTHOR: Gregory Haapakoski (Senior Systems Architect)
+# SYSTEM: GDEV-MOBILE | Win10 Pro | i5-6300U | 8GB RAM MAX
+# ENV: C:\Users\GNeUs\.dev\.venv
 # ==============================================================================
 import os
 import sys

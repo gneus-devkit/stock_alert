@@ -10,19 +10,20 @@ import time
 import gc
 import requests
 
-# ==============================================================================
-# USER CONFIGURATION BLOCK - CHANGE THE VALUE INSIDE THE QUOTES BELOW
-# ==============================================================================
-TARGET_STOCK_TICKER = "AMD"  # <--- Change this to any valid symbol (e.g., "NVDA", "AMD", "META")
-POLLING_INTERVAL_SEC = 20     # <--- Execution delay between real-time data lookups
-# ==============================================================================
+def start_values():
+    # ==============================================================================
+    # USER CONFIGURATION BLOCK - CHANGE THE VALUE INSIDE THE QUOTES BELOW
+    # ==============================================================================
+    TARGET_STOCK_TICKER = "AMD"  # <--- Change this to any valid symbol (e.g., "NVDA", "AMD", "META")
+    POLLING_INTERVAL_SEC = 20     # <--- Execution delay between real-time data lookups
+    # ==============================================================================
 
-# Pre-flight environment containment check
-VENV_PATH = r"D:\Documents\GNeUs_DEV\.venv"
-if not os.path.exists(VENV_PATH):
-    print(f"[-] CRITICAL FAILURE: Managed Virtual Environment Missing at {VENV_PATH}")
-    sys.exit(1)
-
+    # Pre-flight environment containment check
+    VENV_PATH = r"D:\Documents\GNeUs_DEV\.venv"
+    if not os.path.exists(VENV_PATH):
+        print(f"[-] CRITICAL FAILURE: Managed Virtual Environment Missing at {VENV_PATH}")
+        sys.exit(1)
+    return TARGET_STOCK_TICKER, POLLING_INTERVAL_SEC
 
 class Stock_Tracker:
     """
@@ -70,25 +71,25 @@ def main():
     """
     Standalone runner execution loop. Executes when run directly from a text editor.
     """
-    # Use the clean variable defined in the configuration block at the top
-    tracker = Stock_Tracker(ticker=TARGET_STOCK_TICKER)
-    
-    print(f"[+] GNeUs Core Tracker Initiated for Target: {TARGET_STOCK_TICKER}")
-    print(f"[+] Polling state active at {POLLING_INTERVAL_SEC} second intervals...")
-    
+    ticker, polling_interval = start_values()
+    tracker = Stock_Tracker(ticker)
+
+    print(f"[+] GNeUs Core Tracker Initiated for Target: {ticker}")
+    print(f"[+] Polling state active at {polling_interval} second intervals...")
+
     try:
         while True:
             price = tracker.get_current_value()
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            
+
             if price != -1.0:
-                print(f"[{timestamp}] {TARGET_STOCK_TICKER}: ${price:.2f}")
+                print(f"[{timestamp}] {ticker}: ${price:.2f}")
             else:
                 print(f"[{timestamp}] Failed to retrieve fresh tick data.")
-                
-            time.sleep(POLLING_INTERVAL_SEC)
+
+            time.sleep(polling_interval)
             gc.collect()  # Flush heap references to protect local 12GB RAM pool
-            
+
     except KeyboardInterrupt:
         print("\n[+] Extraction loop terminated cleanly.")
 

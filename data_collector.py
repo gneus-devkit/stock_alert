@@ -10,40 +10,44 @@ import time
 import gc
 from datetime import datetime
 
-# Enforce system environment verification before execution
-VENV_PATH = r"C:\Users\GNeUs\.dev\.venv"
-if not os.path.exists(VENV_PATH):
-    print(f"[-] CRITICAL FAILURE: Managed Virtual Environment Missing at {VENV_PATH}")
-    sys.exit(1)
+def start_collect():
+    # Enforce system environment verification before execution
+    VENV_PATH = r"C:\Users\GNeUs\.dev\.venv"
+    if not os.path.exists(VENV_PATH):
+        print(f"[-] CRITICAL FAILURE: Managed Virtual Environment Missing at {VENV_PATH}")
+        sys.exit(1)
 
-# Import the architectural tracker class directly from your previous file
-try:
-    from stock_scraper import Stock_Tracker
-except ImportError:
-    print("[-] CRITICAL: stock_scraper.py not found in the current directory execution path.")
-    sys.exit(1)
+    # Import the architectural tracker class directly from your previous file
+    try:
+        from stock_scraper import Stock_Tracker
+    except ImportError:
+        print("[-] CRITICAL: stock_scraper.py not found in the current directory execution path.")
+        sys.exit(1)
 
-# ==============================================================================
-# COLLECTOR RUNTIME CONFIGURATION
-# ==============================================================================
-WATCHLIST = ["TSLA", "NVDA", "AMD", "META", "MU"]
-COLLECTION_CYCLE_SEC = 20
-OUTPUT_LOG_DIR = r"C:\Users\GNeUs\.dev\04_logs\stock_watch"
-OUTPUT_CSV_FILE = os.path.join(OUTPUT_LOG_DIR, "market_ticks.csv")
-# ==============================================================================
+    # ==============================================================================
+    # COLLECTOR RUNTIME CONFIGURATION
+    # ==============================================================================
+    WATCHLIST = ["TSLA", "NVDA", "AMD", "META", "MU"]
+    COLLECTION_CYCLE_SEC = 20
+    OUTPUT_LOG_DIR = r"C:\Users\GNeUs\.dev\04_logs\stock_watch"
+    OUTPUT_CSV_FILE = os.path.join(OUTPUT_LOG_DIR, "market_ticks.csv")
+    # ==============================================================================
 
-def initialize_storage():
+    return WATCHLIST, COLLECTION_CYCLE_SEC, OUTPUT_LOG_DIR, OUTPUT_CSV_FILE, Stock_Tracker
+
+def initialize_storage(output_log_dir, output_csv_file):
     """Ensures directories exist and sets up CSV headers on the C:\ drive."""
-    if not os.path.exists(OUTPUT_LOG_DIR):
-        os.makedirs(OUTPUT_LOG_DIR)
+    if not os.path.exists(output_log_dir):
+        os.makedirs(output_log_dir)
     
-    if not os.path.exists(OUTPUT_CSV_FILE):
-        with open(OUTPUT_CSV_FILE, "w", encoding="utf-8") as f:
+    if not os.path.exists(output_csv_file):
+        with open(output_csv_file, "w", encoding="utf-8") as f:
             f.write("Timestamp,Ticker,Price\n")
-        print(f"[+] Storage initialized. File registered at: {OUTPUT_CSV_FILE}")
+        print(f"[+] Storage initialized. File registered at: {output_csv_file}")
 
 def main():
-    initialize_storage()
+    WATCHLIST, COLLECTION_CYCLE_SEC, OUTPUT_LOG_DIR, OUTPUT_CSV_FILE, Stock_Tracker = start_collect()
+    initialize_storage(OUTPUT_LOG_DIR, OUTPUT_CSV_FILE)
     
     # Batch-instantiate the tracking engines inside an isolated memory list
     print(f"[+] Initializing GNeUs Ingestion Engines for Watchlist: {WATCHLIST}")

@@ -93,7 +93,7 @@ def simple_anomaly_detector(price_series: pd.Series, window: int = 20, threshold
     return flag
 
 
-if __name__ == "__main__":
+def main():
     # Example usage: python data_analyze.py ./data/prices.json
     import sys
 
@@ -112,3 +112,6 @@ if __name__ == "__main__":
 
     prices = pivot_prices(df)
     print(prices.tail())
+
+if __name__ == "__main__":
+    main()

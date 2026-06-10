@@ -19,7 +19,10 @@ compute returns, moving averages, volatility, and simple anomaly detection.
 from __future__ import annotations
 
 import json
+import os
+import sys
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Any, Optional
 
 import pandas as pd
@@ -29,6 +32,14 @@ def load_json(filepath: str) -> Any:
     """Load JSON from a file and return the parsed object."""
     with open(filepath, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def load_csv(filepath: str) -> pd.DataFrame:
+    """Load a stock market CSV file into a tidy DataFrame."""
+    df = pd.read_csv(filepath, parse_dates=["Timestamp"]).rename(
+        columns={"Timestamp": "timestamp", "Ticker": "symbol", "Price": "price"}
+    )
+    return df[["timestamp", "symbol", "price"]].sort_values(["symbol", "timestamp"]).reset_index(drop=True)
 
 
 def records_to_dataframe(records: list, time_key: str = "timestamp", price_key: str = "price", symbol_key: Optional[str] = "symbol") -> pd.DataFrame:
@@ -93,25 +104,77 @@ def simple_anomaly_detector(price_series: pd.Series, window: int = 20, threshold
     return flag
 
 
-def main():
-    # Example usage: python data_analyze.py ./data/prices.json
-    import sys
+def write_csv_with_spaces(df: pd.DataFrame, output_path: str) -> None:
+    """Write a CSV file with spaces after each comma for human-readable output."""
+    tmp_path = Path(output_path).with_suffix(".tmp.csv")
+    df.to_csv(tmp_path, index=False)
+    text = tmp_path.read_text(encoding="utf-8")
+    tmp_path.write_text(text.replace(",", ", "), encoding="utf-8")
+    Path(output_path).write_text(text.replace(",", ", "), encoding="utf-8")
+    tmp_path.unlink(missing_ok=True)
 
-    if len(sys.argv) < 2:
-        print("Usage: data_analyze.py <json-file>")
+
+def export_analysis_csv(df: pd.DataFrame, output_path: str = "stock_analysis_output.csv") -> pd.DataFrame:
+    """Write a per-symbol analysis summary to CSV for later access."""
+    frames = []
+    for symbol, group in df.groupby("symbol", sort=True):
+        series = group.set_index("timestamp")["price"].astype(float).sort_index()
+        frames.append(
+            pd.DataFrame(
+                {
+                    "timestamp": series.index, 
+                    "symbol": symbol, 
+                    "price": series.values, 
+                    "returns": compute_returns(series).values, 
+                    "moving_average_5": moving_average(series, window=5).values, 
+                    "volatility_20": volatility(series, window=20).values, 
+                    "anomaly_flag": simple_anomaly_detector(series, window=20, threshold=3.0).values,
+                }
+            )
+        )
+
+    if not frames:
+        raise ValueError("No price data was available to export.")
+
+    summary = pd.concat(frames, ignore_index=True)
+    out_dir = Path(output_path).parent
+    if out_dir != Path(""):
+        out_dir.mkdir(parents=True, exist_ok=True)
+    write_csv_with_spaces(summary, output_path)
+    print(f"Saved analysis summary to {output_path}")
+    return summary
+
+
+def main():
+    """Run analysis on JSON or CSV input and export persistent CSV files."""
+    default_input = Path("04_logs/stock_watch/market_ticks.csv")
+    input_path = sys.argv[1] if len(sys.argv) >= 2 else default_input
+
+    if not Path(input_path).exists():
+        print(f"Input file not found: {input_path}")
         sys.exit(1)
 
-    data = load_json(sys.argv[1])
-    # Try both formats
-    if isinstance(data, list):
-        df = records_to_dataframe(data)
-    elif isinstance(data, dict):
-        df = series_to_dataframe(data)
+    if str(input_path).lower().endswith(".csv"):
+        df = load_csv(input_path)
     else:
-        raise SystemExit("Unsupported JSON structure")
+        data = load_json(input_path)
+        if isinstance(data, list):
+            df = records_to_dataframe(data)
+        elif isinstance(data, dict):
+            df = series_to_dataframe(data)
+        else:
+            raise SystemExit("Unsupported JSON structure")
+        df = df.reset_index().rename(columns={"timestamp": "timestamp", "symbol": "symbol", "price": "price"})
 
-    prices = pivot_prices(df)
+    prices = pivot_prices(df.rename(columns={"timestamp": "timestamp", "symbol": "symbol", "price": "price"}))
     print(prices.tail())
+
+    prices_output = Path("prices_output.csv")
+    write_csv_with_spaces(prices, prices_output)
+    print(f"Saved pivoted prices to {prices_output}")
+
+    summary_output = Path(sys.argv[2]) if len(sys.argv) >= 3 else Path("stock_analysis_output.csv")
+    export_analysis_csv(df, str(summary_output))
 
 if __name__ == "__main__":
     main()

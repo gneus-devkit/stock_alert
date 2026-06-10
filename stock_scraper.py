@@ -19,7 +19,7 @@ def start_values():
     # ==============================================================================
 
     # Pre-flight environment containment check
-    VENV_PATH = r"D:\Documents\GNeUs_DEV\.venv"
+    VENV_PATH = r"C:\Users\GNeUs\.dev\.venv"
     if not os.path.exists(VENV_PATH):
         print(f"[-] CRITICAL FAILURE: Managed Virtual Environment Missing at {VENV_PATH}")
         sys.exit(1)
